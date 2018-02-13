@@ -7,14 +7,25 @@ window.join = () => {
     'X-CSRF-TOKEN': csrf
   };
 
+  function flashError(text) {
+    const html = $.parseHTML(`
+      <div class='alert alert-danger fade in'>
+        <button class='close' type='button' data-dismiss='alert'>
+          <i class='fa fa-times-circle-o'/>
+        </button>
+        <div>${text}</div>
+      </div>`);
+    $('#container').prepend(html);
+  }
+
   $('#join').on('submit', event => {
     event.preventDefault();
     const party = $('#party').val();
     const name = $('#name').val();
     sessionStorage.removeItem('party_token_key');
-    axios.post('/join', { party, name }).then(({ data }) => {
-      if (data.error) {
-        console.log(data.error);
+    axios.post('/join', { party, name }).then(({ data, error }) => {
+      if (error) {
+        flashError(error);
       } else {
         sessionStorage.setItem('party_key', party);
         sessionStorage.setItem('name_key', name);
