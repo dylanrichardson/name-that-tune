@@ -9,13 +9,13 @@
   "author": "Dylan Richardson",
   "license": "MIT",
   "scripts": {
-    "watch": "watchify client/game.js client/join.js client/new.js -o public/js/bundle.js",
-    "build": "browserify client/game.js client/join.js client/new.js -o public/js/bundle.js",
-    "startdev": "npm run watch & nodemon app.js",
+    "watch": "./node_modules/.bin/watchify client/game.js client/join.js client/new.js -o public/js/bundle.js",
+    "build": "./node_modules/.bin/browserify client/game.js client/join.js client/new.js -o public/js/bundle.js",
+    "startdev": "npm run watch & ./node_modules/.bin/nodemon app.js",
     "start": "node app.js",
-    "test": "mocha --reporter spec",
-    "postinstall": "npm rebuild node-sass",
-    "eslint": "eslint **/*.js"
+    "test": "./node_modules/.bin/mocha --reporter spec",
+    "postinstall": "npm rebuild node-sass && npm run build",
+    "eslint": "./node_modules/.bin/eslint **/*.js"
   },
   "dependencies": {
     "apiai": "^4.0.3",
@@ -23,6 +23,7 @@
     "bcrypt-nodejs": "^0.0.3",
     "bluebird": "^3.5.0",
     "body-parser": "^1.17.2",
+    "browserify": "^16.1.0",
     "browserify-middleware": "^8.0.0",
     "bufferutil": "^3.0.3",
     "chalk": "^2.1.0",
@@ -54,6 +55,7 @@
     "node-linkedin": "^0.5.6",
     "node-sass-middleware": "^0.11.0",
     "nodemailer": "^4.0.1",
+    "nodemon": "^1.14.12",
     "passport": "0.4.0",
     "passport-facebook": "^2.1.1",
     "passport-github": "^1.1.0",
@@ -74,15 +76,16 @@
     "twilio": "^3.6.3",
     "twit": "^2.2.9",
     "utf-8-validate": "^4.0.0",
-    "validator": "^8.0.0"
+    "validator": "^8.0.0",
+    "watchify": "^3.10.0"
   },
   "devDependencies": {
     "chai": "^4.1.1",
-    "eslint": "^4.4.1",
+    "eslint": "^4.17.0",
     "eslint-config-airbnb-base": "^11.3.1",
     "eslint-plugin-chai-friendly": "^0.4.0",
     "eslint-plugin-import": "^2.7.0",
-    "mocha": "^3.5.0",
+    "mocha": "^5.0.0",
     "sinon": "^3.2.1",
     "sinon-mongoose": "^2.0.2",
     "supertest": "^3.0.0"

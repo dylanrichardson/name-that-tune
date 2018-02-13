@@ -1,16 +1,12 @@
 window.join = () => {
 
-  $('#join').on('submit', function(e) {
-    e.preventDefault();
-    //let csrf = #{_csrf};
-    let party = $('#party').val();
-    let name = $('#name').val();
-    let data = {
-      party: party,
-      name: name
-    };
+  $('#join').on('submit', event => {
+    event.preventDefault();
+    const csrf = $('#csrf').val();
+    const party = $('#party').val();
+    const name = $('#name').val();
     sessionStorage.removeItem('party_token_key');
-    $.post('/join', data, data => {
+    $.post('/join', { party, name }, data => {
       if (data.error) {
         console.log(data.error);
       } else {
@@ -19,7 +15,7 @@ window.join = () => {
         sessionStorage.setItem('party_token_key', data.token);
         window.location = '/game/' + encodeURIComponent(party);
       }
-    })
+    });
   });
 
-}
+};

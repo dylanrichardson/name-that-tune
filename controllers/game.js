@@ -1,17 +1,16 @@
-let crypto = require('crypto');
-let querystring = require('querystring');
-let request = require('request');
-let Game = require('../models/Game');
-let answerController = require('./answer');
+const crypto = require('crypto');
+const querystring = require('querystring');
+const request = require('request');
+const Game = require('../models/Game');
+const answerController = require('./answer');
 
-let spotifyClientId = process.env.SPOTIFY_CLIENT_ID;
-let spotifyClientSecret = process.env.SPOTIFY_CLIENT_SECRET;
+const spotifyClientId = process.env.SPOTIFY_CLIENT_ID;
+const spotifyClientSecret = process.env.SPOTIFY_CLIENT_SECRET;
 
-let stateKey = 'spotify_auth_state';
-let partyKey = 'party_key';
-let nameKey = 'name_key';
-let spotifyKey = 'spotify_key';
-let partyTokenKey = 'party_token_key';
+const stateKey = 'spotify_auth_state';
+const partyKey = 'party_key';
+const nameKey = 'name_key';
+const partyTokenKey = 'party_token_key';
 
 /**
  * GET /new
@@ -36,8 +35,8 @@ exports.postNew = (req, res) => {
       req.flash('errors', errors.array());
       return res.redirect('/new');
     }
-    let party = req.body.party;
-    let name = req.body.name;
+    const party = req.body.party;
+    const name = req.body.name;
     // check if party name exists
     Game.findOne({ name: party }).then(game => {
       if (game) {
@@ -52,23 +51,22 @@ exports.postNew = (req, res) => {
 
 function connectSpotify(req, res, party, name) {
   console.log('Connecting to Spotify');
-  let state = generateRandomString(16);
+  const state = generateRandomString(16);
   res.cookie(stateKey, state);
   res.cookie(partyKey, party);
   res.cookie(nameKey, name);
-  let scope = 'user-modify-playback-state user-read-playback-state';
-  res.redirect('https://accounts.spotify.com/authorize?' +
-    querystring.stringify({
-      response_type: 'code',
-      client_id: spotifyClientId,
-      scope: scope,
-      redirect_uri: spotifyRedirectURI(req),
-      state: state
-    }));
+  const scope = 'user-modify-playback-state user-read-playback-state';
+  res.redirect(`https://accounts.spotify.com/authorize?${querystring.stringify({
+    response_type: 'code',
+    client_id: spotifyClientId,
+    scope,
+    redirect_uri: spotifyRedirectURI(req),
+    state
+  })}`);
 }
 
 function spotifyRedirectURI(req) {
-  return req.protocol + '://' + req.get('host') + '/connect';
+  return `${req.protocol}://${req.get('host')}/connect`;
 }
 
 /**
@@ -77,38 +75,34 @@ function spotifyRedirectURI(req) {
  */
 exports.connect = (req, res) => {
   console.log('Spotify authorized');
-  let code = req.query.code || null;
-  let state = req.query.state || null;
-  let storedState = req.cookies ? req.cookies[stateKey] : null;
+  const code = req.query.code || null;
+  const state = req.query.state || null;
+  const storedState = req.cookies ? req.cookies[stateKey] : null;
 
   if ((state === null || state !== storedState)) {
-    res.redirect('/new/#' +
-      querystring.stringify({
-        error: 'state_mismatch'
-      }));
+    res.redirect(`/new/#${querystring.stringify({
+      error: 'state_mismatch'
+    })}`);
   } else {
     res.clearCookie(stateKey);
-    var authOptions = {
+    const auth = new Buffer(`${spotifyClientId}:${spotifyClientSecret}`).toString('base64');
+    const authOptions = {
       url: 'https://accounts.spotify.com/api/token',
       form: {
-        code: code,
+        code,
         redirect_uri: spotifyRedirectURI(req),
         grant_type: 'authorization_code'
       },
-      headers: {
-        Authorization: 'Basic ' + (new Buffer(spotifyClientId + ':' + spotifyClientSecret).toString('base64'))
-      },
+      headers: { Authorization: `Basic ${auth}` },
       json: true
     };
 
-    request.post(authOptions, function(error, response, body) {
+    request.post(authOptions, (error, response, body) => {
       if (!error && response.statusCode === 200) {
-        // we can also pass the token to the browser to make requests from there
-        res.redirect('/connected?' +
-          querystring.stringify({
-            access_token: body.access_token,
-            refresh_token: body.refresh_token
-          }));
+        res.redirect(`/connected?${querystring.stringify({
+          access_token: body.access_token,
+          refresh_token: body.refresh_token
+        })}`);
       } else {
         console.error(error, body);
         req.flash('errors', { msg: 'Invalid Spotify token.' });
@@ -122,30 +116,23 @@ exports.connect = (req, res) => {
  * GET /connected
  * Handle spotify authentication.
  */
-exports.connected =  (req, res, next) => {
+exports.connected = (req, res, next) => {
   console.log('Spotify authenticated');
-  let accessToken = req.query.access_token;
-  let refreshToken = req.query.refresh_token;
-  let party = req.cookies ? req.cookies[partyKey] : null;
-  let name = req.cookies ? req.cookies[nameKey] : null;
+  const accessToken = req.query.access_token;
+  const refreshToken = req.query.refresh_token;
+  const party = req.cookies ? req.cookies[partyKey] : null;
+  const name = req.cookies ? req.cookies[nameKey] : null;
   res.clearCookie(partyKey);
   res.clearCookie(nameKey);
 
   if (party && name) {
-    let token = generateRandomString(16);
-    let game = new Game({
-      name: party,
-      players: [{
-        name: name,
-        token: token
-      }],
-      accessToken: accessToken,
-      refreshToken: refreshToken
-    });
-    game.save().then( _ => {
+    const token = generateRandomString(16);
+    const players = [{ name, token }];
+    const game = new Game({ name: party, players, accessToken, refreshToken });
+    game.save().then(_ => {
       req.flash('success', { msg: 'Success! Started a new game.' });
       res.cookie(partyTokenKey, token);
-      res.redirect('/game/' + encodeURIComponent(party));
+      res.redirect(`/game/${encodeURIComponent(party)}`);
     }).catch(next);
   } else {
     console.log('Party and name not found in cookies');
@@ -158,107 +145,96 @@ exports.connected =  (req, res, next) => {
  * Join game page.
  */
 exports.getJoin = (req, res) => {
-  res.render('game/join', {
-    title: 'Join Game',
-    party: req.query.party || ''
-  });
-}
+  const title = 'Join Game';
+  const party = req.query.party || '';
+  res.render('game/join', { title, party });
+};
 
 /**
  * POST /join
  * Join a game.
  */
 exports.postJoin = (req, res, next) => {
-  let party = req.body.party;
-  let name = req.body.name;
+  const party = req.body.party;
+  const name = req.body.name;
   if (party && name) {
     return joinGamePage(party, name).then(d => res.send(d)).catch(next);
-  } else {
-    return res.send({ error: 'incomplete data' });
   }
+  const error = 'incompconste data';
+  return res.send({ error });
 };
 
 function joinGamePage(party, name) {
   return getGame(party).then(game => {
-    let playerNames = game.players.map(p => p.name);
+    const playerNames = game.players.map(p => p.name);
     if (playerNames.includes(name)) {
-      return { error: 'Someone with your name is already in the party.' };
+      const error = 'Someone with your name is already in the party.';
+      return { error };
     }
-    let token = generateRandomString(16);
-    return game.update({
-      players: game.players.concat([{
-        name: name,
-        token: token
-      }])
-    }).then( _ => ({ token: token }));
-  }).catch(e => { error: e });
-};
+    const token = generateRandomString(16);
+    const players = game.players.concat([{ name, token }]);
+    return game.update({ players }).then(_ => ({ token }));
+  }).catch(error => ({ error }));
+}
 
 /**
  * GET /game/:party
  * Game page.
  */
-exports.index = (req, res, next) => {
-  let party = req.params.party;
-  getGame(party).then(game => {
-    return res.render('game', {
-      title: party,
-      party: party
-    });
+exports.index = (req, res) => {
+  const party = req.params.party;
+  const title = party;
+  getGame(party).then(_ => {
+    return res.render('game', { title, party });
   }).catch(err => {
     console.error(err);
-    req.flash('errors', { msg: 'Could not find a party with that name.' });
+    const msg = 'Could not find a party with that name.';
+    req.flash('errors', { msg });
     return res.redirect('/join');
   });
 };
 
 function getGame(name) {
-  return Game.findOne({ name: name }).then(game => {
+  return Game.findOne({ name }).then(game => {
     if (!game) throw 'Could not find a party with that name.';
     return game;
   });
 }
 
-let answer = (io, id) => data => {
-  let question = data.text;
-  let party = data.party;
+const answer = (io, id) => data => {
+  const question = data.text;
+  const party = data.party;
   io.to(party).emit('question', data);
   getGame(party).then(game => {
-    return game.update({
-      chat: game.chat.concat([{
-        question: {
-          name: data.name,
-          text: data.text
-        }
-      }])
-    })
+    const name = data.name;
+    const text = data.text;
+    const question = { name, text };
+    const chat = game.chat.concat([{ question }]);
+    return game.update({ chat });
   });
   return answerController.answerQuestion(question, party, id).then(answer => {
     io.to(party).emit('answer', answer);
     return getGame(party).then(game => {
-      return game.update({
-        chat: game.chat.concat([{
-          answer: answer
-        }])
-      });
-    })
+      const chat = game.chat.concat([{ answer }]);
+      return game.update({ chat });
+    });
   });
 };
 
 function leaveGame(io, data) {
-  let party = data.party;
-  let name = data.party;
+  const party = data.party;
+  const name = data.party;
   console.log(name, 'leaving', party);
   return getGame(party).then(game => {
-    let players = game.players;
-    let index = players.map(p => p.name).indexOf(name);
+    const players = game.players;
+    const index = players.map(p => p.name).indexOf(name);
     players.splice(index, 1);
     if (players.length === 0) {
-      console.log('deleting game', party)
+      console.log('deconsting game', party);
       return game.remove();
     }
     io.to(party).emit('players', players.map(p => p.name));
-    return game.update({ players: players });
+    return game.update({ players });
   }).catch(console.error);
 }
 
@@ -266,37 +242,32 @@ function generateRandomString() {
   return crypto.randomBytes(20).toString('hex');
 }
 
-let joinGame = (io, socket) => data => {
-  let party = data.party;
-  let name = data.name;
+const joinGame = (io, socket) => data => {
+  const { party, name, token } = data;
   console.log(name, 'joining', party);
   socket.join(party);
   getGame(party).then(game => {
-    let playerNames = game.players.map(p => p.name);
+    const chat = game.chat;
+    const playerNames = game.players.map(p => p.name);
     if (!playerNames.includes(name)) {
-      game.update({
-        players: game.players.concat([{
-          name: name,
-          token: data.token
-        }])
-      });
+      const players = game.players.concat([{ name, token }]);
+      game.update({ players });
       playerNames.push(name);
     }
-    return { playerNames, chat: game.chat };
+    return { playerNames, chat };
   }).then(data => {
     io.to(party).emit('players', data.playerNames);
     socket.emit('chat', data.chat);
   });
-}
+};
 
 exports.handleSocket = io => socket => {
-  var savedData = {};
-  let on = (name, handler) => {
+  let savedData = {};
+  const on = (name, handler) => {
     return socket.on(name, data => {
       savedData = data;
       return getGame(data.party).then(game => {
-        if (!game.players.map(p => p.token).includes(data.token))
-          throw 'Invalid token';
+        if (!game.players.map(p => p.token).includes(data.token)) throw 'Invalid token';
         return handler(data);
       }).catch(e => {
         console.error(e);
@@ -307,4 +278,4 @@ exports.handleSocket = io => socket => {
   on('room', joinGame(io, socket));
   on('question', answer(io, socket.id));
   socket.on('disconnect', () => leaveGame(io, savedData));
-}
+};

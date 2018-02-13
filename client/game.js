@@ -1,88 +1,100 @@
 window.game = () => {
 
-  let Cookies = require('js-cookie');
+  // dependencies
 
-  let partyTokenKey = 'party_token_key';
-  let name = sessionStorage.getItem('name_key');
-  let party = decodeURIComponent(window.location.pathname.substring(6));
+  const Cookies = require('js-cookie');
+
+  // initialization
+
+  const tokenKey = 'party_token_key';
+  const name = sessionStorage.getItem('name_key');
+  const party = decodeURIComponent(window.location.pathname.substring(6));
   if (!name) {
     sessionStorage.clear();
-    Cookies.remove(partyTokenKey);
-    window.location = '/join?party=' + encodeURIComponent(party)
+    Cookies.remove(tokenKey);
+    window.location = `/join?party=${encodeURIComponent(party)}`;
   }
   $('#name').html(name);
 
-  let partyToken = sessionStorage.getItem(partyTokenKey);
-  if (!partyToken) {
+  let token = sessionStorage.getItem(tokenKey);
+  if (!token) {
     console.log('party token not found in session');
-    partyToken = Cookies.get(partyTokenKey);
-    sessionStorage.setItem(partyTokenKey, partyToken);
+    token = Cookies.get(tokenKey);
+    sessionStorage.setItem(tokenKey, token);
   }
-  Cookies.remove(partyTokenKey);
+
+  Cookies.remove(tokenKey);
 
   let playerNames = [name];
-  let questionInput = document.getElementById('question');
-  var chatLoaded = false;
+  const questionInput = document.getElementById('question');
+  let chatLoaded = false;
 
-  let SpeechRecognition = webkitSpeechRecognition || SpeechRecognition;
-  let SpeechGrammarList = webkitSpeechGrammarList || SpeechGrammarList;
-  let SpeechRecognitionEvent = webkitSpeechRecognitionEvent || SpeechRecognitionEvent;
-  let grammar = '#JSGF V1.0;';
-  let recognition = new SpeechRecognition();
-  let speechRecognitionList = new SpeechGrammarList();
+  const SpeechRecognition = webkitSpeechRecognition || SpeechRecognition;
+  const SpeechGrammarList = webkitSpeechGrammarList || SpeechGrammarList;
+  const SpeechRecognitionEvent = webkitSpeechRecognitionEvent || SpeechRecognitionEvent;
+  const grammar = '#JSGF V1.0;';
+  const recognition = new SpeechRecognition();
+  const speechRecognitionList = new SpeechGrammarList();
   speechRecognitionList.addFromString(grammar, 1);
   recognition.grammars = speechRecognitionList;
-  //recognition.continuous = false;
+  // recognition.continuous = false;
   recognition.lang = 'en-US';
   recognition.interimResults = false;
   recognition.maxAlternatives = 1;
 
-  recognition.onresult = function(event) {
-    var last = event.results.length - 1;
-    var text = event.results[last][0].transcript;
-    addToChat(text, name);
-    console.log('text', text)
-    console.log('Confidence: ' + event.results[0][0].confidence);
+  const socket = io.connect();
+
+
+  // functions
+
+  function leaveGame() {
+    console.log('being kicked');
+    sessionStorage.clear();
+    Cookies.remove(tokenKey);
+    window.location = '/';
   }
 
-  recognition.onspeechend = function() {
-    recognition.stop();
+  function updatePlayers(players) {
+    console.log('players', players);
+    playerNames = players;
+    const playersHTML =  + playerNames.reduce((t, p) => t + `<div>${p}</div>`, '');
+    $('#players').html(`players${playersHTML}`);
   }
 
-  recognition.onnomatch = function(event) {
-    console.log('Could not understand that');
+  function saveToChat(text) {
+    socket.emit('question', { text, name, party, token });
   }
 
-  questionInput.onkeydown = function(event) {
-      if (event.keyCode == 13) {
-          let text = questionInput.value;
-          questionInput.value = '';
-          addQuestion(text, name);
-          saveToChat(text);
-      }
+  function speech() {
+    console.log('starting recognition');
+    recognition.start();
   }
 
-  let socket = io.connect();
+  function addQuestion(text, name) {
+    const str = `
+      <div class="row">
+        <div class="col-sm-4">
+          <div class="well well-sm">
+            ${name}: ${text}
+          </div>
+        </div>
+      </div>`;
+    const textBox = $.parseHTML(str);
+    $('#chat').append(textBox);
+  }
 
-  socket.on('connect', () => socket.emit('room', {
-    party: party,
-    name: name,
-    token: partyToken
-  }));
-
-  socket.on('question', function (data) {
-    if (data.name !== name) {
-      addQuestion(data.text, data.name);
-    }
-  });
-
-  socket.on('answer', addAnswer);
-
-  socket.on('players', updatePlayers);
-
-  socket.on('kick', leaveGame);
-
-  socket.on('chat', loadChat);
+  function addAnswer(text) {
+    const str = `
+      <div class="row">
+        <div class="col-sm-offset-8 col-sm-4">
+          <div class="well well-sm">
+            ${text}
+          </div>
+        </div>
+      </div>`;
+    const textBox = $.parseHTML(str);
+    $('#chat').append(textBox);
+  }
 
   function loadChat(data) {
     if (!chatLoaded) {
@@ -97,57 +109,47 @@ window.game = () => {
     }
   }
 
-  function leaveGame() {
-    console.log('being kicked');
-    sessionStorage.clear();
-    Cookies.remove(partyTokenKey);
-    window.location = '/';
-  }
+  // event handlers
 
-  function updatePlayers(players) {
-    console.log('players', players);
-    playerNames = players;
-    $('#players').html('players' + playerNames.reduce((t, p) => t + `<div>${p}</div>`, ''));
-  }
+  recognition.onresult = event => {
+    const last = event.results.length - 1;
+    const text = event.results[last][0].transcript;
+    addQuestion(text, name);
+    console.log('text', text);
+    console.log(`Confidence: ${event.results[0][0].confidence}`);
+  };
 
-  function saveToChat(text) {
-    socket.emit('question', {
-      text: text,
-      name: name,
-      party: party,
-      token: partyToken
-    });
-  }
+  recognition.onspeechend = () => {
+    recognition.stop();
+  };
 
-  function speech() {
-    console.log('starting recognition');
-    recognition.start();
-  }
+  recognition.onnomatch = _ => {
+    console.log('Could not understand that');
+  };
 
-  function addQuestion(text, name) {
-    let str = `
-      <div class="row">
-        <div class="col-sm-4">
-          <div class="well well-sm">
-            ${name}: ${text}
-          </div>
-        </div>
-      </div>`;
-    let textBox = $.parseHTML(str);
-    $('#chat').append(textBox);
-  }
+  questionInput.onkeydown = event => {
+    if (event.keyCode === 13) {
+      const text = questionInput.value;
+      questionInput.value = '';
+      addQuestion(text, name);
+      saveToChat(text);
+    }
+  };
 
-  function addAnswer(text) {
-    let str = `
-      <div class="row">
-        <div class="col-sm-offset-8 col-sm-4">
-          <div class="well well-sm">
-            ${text}
-          </div>
-        </div>
-      </div>`;
-    let textBox = $.parseHTML(str);
-    $('#chat').append(textBox);
-  }
+  socket.on('connect', () => socket.emit('room', { party, name, token }));
 
-}
+  socket.on('question', data => {
+    if (data.name !== name) {
+      addQuestion(data.text, data.name);
+    }
+  });
+
+  socket.on('answer', addAnswer);
+
+  socket.on('players', updatePlayers);
+
+  socket.on('kick', leaveGame);
+
+  socket.on('chat', loadChat);
+
+};
