@@ -1,0 +1,15 @@
+extends layout
+
+block content
+  h1 Name That Tune
+  p.lead Connect to Spotify to play with your music.
+  hr
+  .row
+    .col-sm-6
+      h2 Start a new game
+      p
+        a.btn.btn-default(href='/new', role='button') Start »
+    .col-sm-6
+      h2 Join a game
+      p
+        a.btn.btn-default(href='/join', role='button') Join »

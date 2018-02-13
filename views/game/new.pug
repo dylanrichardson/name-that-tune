@@ -1,0 +1,21 @@
+extends ../layout
+
+block content
+  .page-header
+    h3 Start a new game
+  form.form-horizontal(method='POST', id='new-game')
+    input(type='hidden', name='_csrf', value=_csrf)
+    .form-group
+      label.col-sm-3.control-label(for='party') Party name
+      .col-sm-7
+        input.form-control(type='text', name='party', id='party', placeholder='Party name', autofocus)
+    .form-group
+      label.col-sm-3.control-label(for='name') Your name
+      .col-sm-7
+        input.form-control(type='text', name='name', id='name', placeholder='Name', required)
+    .form-group
+      .col-sm-offset-3.col-sm-7
+        button.col-sm-4.btn.btn-primary(type='submit')
+          | Connect to Spotify
+  script.
+    window.newGame()

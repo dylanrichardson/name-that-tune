@@ -1,0 +1,18 @@
+extends ../layout
+
+block content
+  .page-header
+    h3 #{party}
+    h4(id='name')
+  .container(id='players')
+  hr
+  .container(id='chat')
+  hr
+  .form-group
+    label.col-sm-2.control-label(for='question') Question
+    .col-sm-9
+      input.form-control(type='text', name='question', id='question', placeholder='Type here', autofocus)
+    button.col-sm-1.btn.btn-primary(onclick='speech()')
+      i.fa.fa-microphone
+  script.
+    window.game();
