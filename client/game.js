@@ -57,7 +57,7 @@ window.game = () => {
   function updatePlayers(players) {
     console.log('players', players);
     playerNames = players;
-    const playersHTML =  + playerNames.reduce((t, p) => t + `<div>${p}</div>`, '');
+    const playersHTML = playerNames.reduce((t, p) => t + `<div>${p}</div>`, '');
     $('#players').html(`players${playersHTML}`);
   }
 
