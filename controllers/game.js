@@ -7,7 +7,6 @@ let answerController = require('./answer');
 let spotifyClientId = process.env.SPOTIFY_CLIENT_ID;
 let spotifyClientSecret = process.env.SPOTIFY_CLIENT_SECRET;
 
-let spotifyRedirectURI = 'http://localhost:8080/connect';
 let stateKey = 'spotify_auth_state';
 let partyKey = 'party_key';
 let nameKey = 'name_key';
@@ -46,12 +45,12 @@ exports.postNew = (req, res) => {
         return res.redirect('/new');
       }
       // connect to Spotify
-      connectSpotify(res, party, name);
+      connectSpotify(req, res, party, name);
     });
   });
 };
 
-function connectSpotify(res, party, name) {
+function connectSpotify(req, res, party, name) {
   console.log('Connecting to Spotify');
   let state = generateRandomString(16);
   res.cookie(stateKey, state);
@@ -63,9 +62,13 @@ function connectSpotify(res, party, name) {
       response_type: 'code',
       client_id: spotifyClientId,
       scope: scope,
-      redirect_uri: spotifyRedirectURI,
+      redirect_uri: spotifyRedirectURI(req),
       state: state
     }));
+}
+
+function spotifyRedirectURI(req) {
+  return req.protocol + '://' + req.get('host') + '/connect';
 }
 
 /**
@@ -89,7 +92,7 @@ exports.connect = (req, res) => {
       url: 'https://accounts.spotify.com/api/token',
       form: {
         code: code,
-        redirect_uri: spotifyRedirectURI,
+        redirect_uri: spotifyRedirectURI(req),
         grant_type: 'authorization_code'
       },
       headers: {
@@ -107,6 +110,7 @@ exports.connect = (req, res) => {
             refresh_token: body.refresh_token
           }));
       } else {
+        console.error(error, body);
         req.flash('errors', { msg: 'Invalid Spotify token.' });
         res.redirect('/new');
       }
