@@ -1,6 +1,3 @@
-# name-that-tune
-Name That Tune using Dialogflow voice recognition and Spotify
-
 # Setup
 
 Create a new Dialogflow agent at https://console.dialogflow.com/api-client/#/newAgent.
