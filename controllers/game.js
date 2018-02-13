@@ -223,14 +223,14 @@ const answer = (io, id) => data => {
 
 function leaveGame(io, data) {
   const party = data.party;
-  const name = data.party;
+  const name = data.name;
   console.log(name, 'leaving', party);
   return getGame(party).then(game => {
     const players = game.players;
     const index = players.map(p => p.name).indexOf(name);
     players.splice(index, 1);
     if (players.length === 0) {
-      console.log('deconsting game', party);
+      console.log('deleting game', party);
       return game.remove();
     }
     io.to(party).emit('players', players.map(p => p.name));
