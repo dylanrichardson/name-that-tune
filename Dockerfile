@@ -1,4 +1,4 @@
-FROM node:6-slim
+FROM node:9-slim
 
 COPY . /name-that-tune
 COPY package.json /name-that-tune/package.json
@@ -9,6 +9,6 @@ WORKDIR /name-that-tune
 ENV NODE_ENV production
 RUN npm install --production
 
-CMD ["npm","start"]
+CMD ["npm", "start"]
 
 EXPOSE 8888

@@ -160,11 +160,12 @@ exports.postJoin = (req, res, next) => {
   if (party && name) {
     return joinGamePage(party, name).then(d => res.send(d)).catch(next);
   }
-  const error = 'incompconste data';
+  const error = 'incomplete data';
   return res.send({ error });
 };
 
 function joinGamePage(party, name) {
+  console.log(`${name} trying to join ${party} page.`);
   return getGame(party).then(game => {
     const playerNames = game.players.map(p => p.name);
     if (playerNames.includes(name)) {
@@ -270,7 +271,7 @@ exports.handleSocket = io => socket => {
         if (!game.players.map(p => p.token).includes(data.token)) throw 'Invalid token';
         return handler(data);
       }).catch(e => {
-        console.error(e);
+        console.error(name, e, data);
         socket.emit('kick');
       });
     });

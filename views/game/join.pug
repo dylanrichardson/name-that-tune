@@ -4,7 +4,7 @@ block content
   .page-header
     h3 Join a game
   form.form-horizontal(method='POST', id='join')
-    //input(type='hidden', name='_csrf', value=_csrf)
+    input(type='hidden', name='_csrf', id='csrf', value=_csrf)
     .form-group
       label.col-sm-3.control-label(for='party') Party name
       .col-sm-7
