@@ -1,11 +1,13 @@
-version: '0.1.0'
+version: '2'
 services:
   mongo:
     image: mongo:3.4
   web:
     build: .
+    command: yarn run startdev
     ports:
      - "3000:3000"
+    env_file: .env
     environment:
      - MONGODB_URI=mongodb://mongo:27017/test
     links:
@@ -14,4 +16,3 @@ services:
      - mongo
     volumes:
      - .:/name-that-tune
-     - /name-that-tune/node_modules

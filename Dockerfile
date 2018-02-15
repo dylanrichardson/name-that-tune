@@ -1,14 +1,17 @@
-FROM node:9-slim
+FROM node:9-alpine
+
+MAINTAINER Dylan Richardson <dylanrichardson1996@gmail.com>
+
+RUN apk add --no-cache --virtual .gyp python make g++
 
 COPY . /name-that-tune
-COPY package.json /name-that-tune/package.json
-COPY .env /name-that-tune/.env
 
 WORKDIR /name-that-tune
 
-ENV NODE_ENV production
-RUN npm install --production
+RUN yarn install --production
 
-CMD ["npm", "start"]
+RUN apk del .gyp
 
-EXPOSE 8888
+EXPOSE 3000
+
+CMD yarn start
