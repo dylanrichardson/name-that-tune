@@ -10,6 +10,8 @@ WORKDIR /name-that-tune
 
 RUN npm install --production
 
+RUN npm rebuild node-sass --force
+
 RUN apk del .gyp
 
 EXPOSE 3000
