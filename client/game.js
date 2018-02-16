@@ -65,7 +65,7 @@ window.game = () => {
     socket.emit('question', { text, name, party, token });
   }
 
-  function speech() {
+  window.speech = () => {
     console.log('starting recognition');
     recognition.start();
   }
@@ -115,6 +115,7 @@ window.game = () => {
     const last = event.results.length - 1;
     const text = event.results[last][0].transcript;
     addQuestion(text, name);
+    saveToChat(text);
     console.log('text', text);
     console.log(`Confidence: ${event.results[0][0].confidence}`);
   };

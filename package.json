@@ -11,10 +11,10 @@
   "scripts": {
     "watch": "./node_modules/.bin/watchify client/game.js client/join.js client/new.js -o public/js/bundle.js",
     "build": "./node_modules/.bin/browserify client/game.js client/join.js client/new.js -o public/js/bundle.js",
-    "startdev": "yarn run watch & ./node_modules/.bin/nodemon app.js",
+    "startdev": "npm run watch & ./node_modules/.bin/nodemon app.js",
     "start": "node app.js",
     "test": "./node_modules/.bin/mocha --reporter spec",
-    "postinstall": "npm rebuild node-sass && yarn run build",
+    "postinstall": "npm rebuild node-sass && npm run build",
     "eslint": "./node_modules/.bin/eslint **/*.js"
   },
   "dependencies": {
