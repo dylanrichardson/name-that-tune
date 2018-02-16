@@ -4,12 +4,13 @@ services:
     image: mongo:3.4
   web:
     build: .
-    command: yarn run startdev
+    command: npm run startdev
     ports:
      - "3000:3000"
     env_file: .env
     environment:
      - MONGODB_URI=mongodb://mongo:27017/test
+     - PORT=3000
     links:
      - mongo
     depends_on:
